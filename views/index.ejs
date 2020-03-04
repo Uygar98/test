@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Uygar</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <div>
+        Video: <select id="camera"></select>
+    </div>
+
+    <p>
+        <button id="takeProfilePicture" type="button" autofocus="true">Take Picture</button>
+    </p>
+
+    <video id="videoTag" autoplay></video>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <div>
+        <img id="displayImage">
+    </div>
+
+    <script>
+
+        var videoArea = document.querySelector("video");
+        var videoSelect = document.querySelector('#camera');
+        
+        var canvas = document.querySelector("#canvas");
+        var displayImage = document.querySelector("#displayImage");
+        var takepic = document.querySelector("#takeProfilePicture");
+        var videoTag = document.querySelector("#videoTag");
+
+        var width = 240;
+        var height = 0;
+        var streaming = false;
+
+
+        takepic.addEventListener('click', function (ev) {
+            takeProfilePicture();
+            ev.preventDefault();
+        }, false);
+
+        
+
+            videoTag.addEventListener('canplay', function (ev) {
+                if (!streaming) {
+                    height = videoTag.videoHeight / (videoTag.videoWidth / width);
+
+                    videoTag.setAttribute('width', width);
+                    videoTag.setAttribute('height', height);
+                    canvas.setAttribute('width', width);
+                    canvas.setAttribute('height', height);
+                    streaming = true;
+                }
+            }, false);
+
+            function takeProfilePicture() {
+            var context = canvas.getContext('2d');
+            if (width && height) {
+                canvas.width = width;
+                canvas.height = height;
+                context.drawImage(videoTag, 0, 0, width, height);
+
+                var data = canvas.toDataURL('image/png');
+                displayImage.setAttribute('src', data);
+
+            }
+
+
+
+
+
+
+        }
+
+
+        videoSelect.onchange = startStream;
+        navigator.mediaDevices.enumerateDevices()
+            .then(getCameras)
+            .catch((err) => {
+                console.log(err.name + ": " + err.message);
+            });
+
+
+
+        startStream();
+
+        function getCameras(devices) {
+            devices.forEach(function (device) {
+                var option = document.createElement('option');
+                option.value = device.id;
+                if (device.kind === 'videoinput') {
+                    option.text = device.label || 'camera ' + (videoSelect.length + 1);
+                    videoSelect.appendChild(option);
+                }
+            })
+        }
+
+        function startStream() {
+
+            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            var videoSource = videoSelect.value;
+            var constraints = {
+                audio: false,
+                video: {
+                    mandatory: {
+
+                        minWidth: 240,
+                        maxWidth: 240,
+                        minHeight: 240,
+                        maxHeight: 240
+
+                    },
+
+                    optional: [{
+                        sourceId: videoSource
+                    }]
+                }
+
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints).then(onSuccess).catch(onError)
+        }
+
+        function onSuccess(stream) {
+            var video = document.querySelector('video');
+            console.log("Success We have a stream");
+            video.srcObject = stream;
+            videoArea.className = "filter";
+            video.onloadedmetadata = function (e) {
+                // Do something with the video here.
+            };
+        }
+
+        function onError(error) {
+            console.log("Error", error);
+
+        }
+
+    </script>
+
+</body>
+
+</html>
